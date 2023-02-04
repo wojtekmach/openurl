@@ -1,0 +1,2 @@
+defmodule OpenURL do
+end
