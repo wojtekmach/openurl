@@ -3,6 +3,29 @@ defmodule OpenURL do
     url |> URI.new!() |> open()
   end
 
+  def open(%URI{scheme: scheme} = url) when scheme in [nil, "file"] do
+    case Path.extname(url.path) do
+      ".zip" ->
+        OpenURLZip.open(url)
+
+      ".tar" ->
+        OpenURLTar.open(url)
+
+      ".tgz" ->
+        %{OpenURLTar.open(url) | compressed: true}
+
+      ".gz" ->
+        if String.ends_with?(url.path, ".tar.gz") do
+          %{OpenURLTar.open(url) | compressed: true}
+        else
+          OpenURLFile.open(url)
+        end
+
+      _ ->
+        OpenURLFile.open(url)
+    end
+  end
+
   def open(%URI{scheme: "phoenix"} = url) do
     OpenURLPhoenix.open(url)
   end
@@ -24,15 +47,15 @@ defmodule OpenURL do
   end
 
   def open(%URI{scheme: "zip"} = url) do
-    OpenZip.open(url)
+    OpenURLZip.open(url)
   end
 
   def open(%URI{scheme: "tar"} = url) do
-    OpenTar.open(url)
+    OpenURLTar.open(url)
   end
 
   def open(%URI{scheme: "tgz"} = url) do
-    %{OpenTar.open(url) | compressed: true}
+    %{OpenURLTar.open(url) | compressed: true}
   end
 
   def open(%URI{scheme: "postgres"} = url) do
@@ -65,6 +88,22 @@ defmodule OpenURL do
 
   def write(%_{} = struct, data) do
     struct.__struct__.write(struct, data)
+  end
+end
+
+defmodule OpenURLFile do
+  defstruct [:url]
+
+  def open(url) do
+    %__MODULE__{url: url}
+  end
+
+  def read(struct) do
+    File.read!(struct.url.path)
+  end
+
+  def write(struct, data) do
+    File.write!(struct.url.path, data)
   end
 end
 
@@ -198,7 +237,7 @@ defmodule OpenURLErlang do
   end
 end
 
-defmodule OpenZip do
+defmodule OpenURLZip do
   defstruct [:url]
 
   def open(url) do
@@ -224,7 +263,7 @@ defmodule OpenZip do
   end
 end
 
-defmodule OpenTar do
+defmodule OpenURLTar do
   defstruct [:url, compressed: false]
 
   def open(url) do
