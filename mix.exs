@@ -19,6 +19,12 @@ defmodule OpenURL.MixProject do
   end
 
   defp deps do
-    []
+    [
+      {:phoenix_client, "~> 0.3"},
+      {:req_easyhtml, ">= 0.0.0"},
+      {:jason, "~> 1.0"},
+      {:postgrex, ">= 0.0.0"},
+      {:myxql, ">= 0.0.0"}
+    ]
   end
 end
