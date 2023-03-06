@@ -211,7 +211,7 @@ defmodule OpenURLElixir do
     [
       elixir_version: System.version(),
       otp_release: System.otp_release(),
-      erts_version: :erlang.system_info(:version),
+      erts_version: List.to_string(:erlang.system_info(:version)),
       schedulers: System.schedulers(),
       schedulers_online: System.schedulers_online()
     ]
