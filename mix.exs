@@ -24,7 +24,10 @@ defmodule OpenURL.MixProject do
       {:req_easyhtml, ">= 0.0.0"},
       {:jason, "~> 1.0"},
       {:postgrex, ">= 0.0.0"},
-      {:myxql, ">= 0.0.0"}
+      {:myxql, ">= 0.0.0"},
+      {:easyhtml, ">= 0.0.0"},
+      {:easyrss, ">= 0.0.0", github: "wojtekmach/easyrss"},
+      {:earmark_parser, ">= 0.0.0"}
     ]
   end
 end

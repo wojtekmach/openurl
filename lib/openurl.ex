@@ -1,4 +1,12 @@
 defmodule OpenURL do
+  def get(url) do
+    read(url)
+  end
+
+  def put(url, data) do
+    write(url, data)
+  end
+
   def open(url) when is_binary(url) do
     url |> URI.new!() |> open()
   end
@@ -20,6 +28,12 @@ defmodule OpenURL do
         else
           OpenURLFile.open(url)
         end
+
+      ".html" ->
+        OpenURLHTML.open(url)
+
+      ".md" ->
+        OpenURLMarkdown.open(url)
 
       _ ->
         OpenURLFile.open(url)
@@ -134,6 +148,7 @@ defmodule OpenURLHTTP do
   def read(struct) do
     Req.new()
     |> ReqEasyHTML.attach()
+    |> OpenURL.ReqEasyRSS.attach()
     |> Req.get!(url: struct.url)
     |> Map.fetch!(:body)
   end
@@ -296,19 +311,59 @@ defmodule OpenURLTar do
   end
 end
 
-# defmodule Main do
-#   def main do
-#     import Open
+defmodule OpenURLHTML do
+  defstruct [:url]
 
-#     read("https://api.github.com/repos/wojtekmach/req")["description"]
-#     |> dbg()
+  def open(url) do
+    %__MODULE__{url: url}
+  end
 
-#     write("phoenix://localhost:5001/room:lobby/upcase", "hello")
-#     |> dbg()
+  def read(struct) do
+    File.read!(struct.url.path)
+    |> EasyHTML.parse!()
+  end
 
-#     read("elixir:runtime_info")
-#     |> dbg()
-#   end
-# end
+  def write(struct, %EasyHTML{} = data) do
+    write(struct, to_string(data))
+  end
 
-# Main.main()
+  def write(struct, data) do
+    File.write!(struct.url.path, data)
+  end
+end
+
+defmodule OpenURLMarkdown do
+  defstruct [:url]
+
+  def open(url) do
+    %__MODULE__{url: url}
+  end
+
+  def read(struct) do
+    markdown = File.read!(struct.url.path)
+    {:ok, ast, []} = EarmarkParser.as_ast(markdown)
+    ast
+  end
+
+  def write(struct, data) do
+    File.write!(struct.url.path, data)
+  end
+end
+
+defmodule OpenURL.ReqEasyRSS do
+  @moduledoc false
+  def attach(request) do
+    Req.Request.append_response_steps(request, req_easyrss_decode: &decode/1)
+  end
+
+  defp decode({request, response}) do
+    case Req.Response.get_header(response, "content-type") do
+      ["application/atom+xml" <> _] ->
+        response = update_in(response.body, &EasyRSS.parse!/1)
+        {request, response}
+
+      _other ->
+        {request, response}
+    end
+  end
+end

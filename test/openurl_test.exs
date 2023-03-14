@@ -33,6 +33,22 @@ defmodule OpenURLTest do
     assert read("#{tmp_dir}/foo.tar.gz") == [{"foo.txt", "bar"}]
   end
 
+  @tag :tmp_dir
+  test "file html", %{tmp_dir: tmp_dir} do
+    html = "<p><span>foo</span> <span>bar</span></p>"
+    write("#{tmp_dir}/foo.html", html)
+    assert read("#{tmp_dir}/foo.html") == EasyHTML.parse!(html)
+
+    write("#{tmp_dir}/foo.html", EasyHTML.parse!(html))
+  end
+
+  @tag :tmp_dir
+  test "file markdown", %{tmp_dir: tmp_dir} do
+    markdown = "_hello_"
+    write("#{tmp_dir}/foo.md", markdown)
+    assert read("#{tmp_dir}/foo.md") == [{"p", [], [{"em", [], ["hello"], %{}}], %{}}]
+  end
+
   test "erts:processes" do
     read("erts:processes")
     |> Enum.take(5)
